@@ -39,7 +39,8 @@ xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # Frames and history contain whatever was on the phone's screen: owner-only.
 chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
 
-CMD="$FRAMES -interval 1s"
+# Stay on Wi-Fi even while charging by USB, so unplugging does not break capture.
+CMD="$FRAMES -interval 1s -wifi-only"
 {
   cat <<PL
 <?xml version="1.0" encoding="UTF-8"?>
