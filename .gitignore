@@ -1,0 +1,5 @@
+bin/
+screen.txt
+history/
+*.log
+.DS_Store
