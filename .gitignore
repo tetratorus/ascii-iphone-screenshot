@@ -3,3 +3,4 @@ screen.txt
 history/
 *.log
 .DS_Store
+__pycache__/

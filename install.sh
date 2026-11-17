@@ -7,7 +7,7 @@
 #   ./install.sh              install bin/ binaries' LaunchAgent and start it
 #   ./install.sh --uninstall  stop and remove the service (data is kept)
 #
-# bin/ holds copies of ascii-screen (release build of ../ascii-screenshot/macos)
+# bin/ holds copies of ascii-screen (release build of ../ascii-screenshot-iphone-build/macos)
 # and phoneframes (build of ../lightpinky/cmd/phoneframes). Rebuild there, then
 # replace the files in bin/.
 #
@@ -25,6 +25,11 @@ LOG="$HOME/Library/Logs/ascii-iphone-screen.log"
 DOMAIN="gui/$(id -u)"
 
 launchctl bootout "$DOMAIN/$LABEL" 2>/dev/null || true
+# bootout may return before launchd finishes removing the old job.
+for ((attempt = 0; attempt < 50; attempt++)); do
+  launchctl print "$DOMAIN/$LABEL" >/dev/null 2>&1 || break
+  sleep 0.1
+done
 if [[ "${1:-}" == "--uninstall" ]]; then
   rm -f "$PLIST"
   echo "Removed. Output in $DIR and log $LOG were kept."
@@ -54,6 +59,7 @@ CMD="$FRAMES -interval 1s -wifi-only"
     <string>--interval</string><string>1s</string>
     <string>--width</string><string>100</string>
     <string>--height</string><string>40</string>
+    <string>--fit</string>
     <string>--out</string><string>$(xml "$DIR/screen.txt")</string>
     <string>--history</string><string>$(xml "$DIR/history")</string>
     <string>--stats</string>
