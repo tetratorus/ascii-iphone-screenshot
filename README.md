@@ -3,6 +3,45 @@
 Records the phone's screen as positioned text and searchable history.
 `install.sh` runs the recorder as a macOS LaunchAgent.
 
+## Set up the `aip` shortcut
+
+Add this shell function to `~/.zshrc` (macOS's default shell). Set `repo` to
+your checkout's location. Playback needs `bin/ascii-screen` from the
+[recorder sources](#recorder-sources); `--uptime` needs Python 3.10 or later
+and recorded history in this checkout's `history/` directory.
+
+```zsh
+aip() {
+  local repo="$HOME/repo/ai/ascii-iphone-screenshot" # change to your checkout
+  if [[ "${1:-}" == "--uptime" ]]; then
+    shift
+    python3 "$repo/uptime.py" "$@"
+    return $?
+  fi
+  local args=(--play --fit --history "$repo/history")
+  if (( $# > 2 )); then
+    printf 'Usage: aip [from [to]] | aip --uptime [from [to]] [--once|--json|--watch]\n' >&2
+    return 2
+  fi
+  if (( $# >= 1 )); then
+    args+=(--from "$1")
+  fi
+  if (( $# == 2 )); then
+    args+=(--to "$2")
+  fi
+  "$repo/bin/ascii-screen" "${args[@]}"
+}
+```
+
+Reload the configuration, or open a new terminal:
+
+```sh
+source ~/.zshrc
+```
+
+The command is lowercase `aip`. For Mac screen history, see the
+[`ap` setup in ASCII Screen](https://github.com/tetratorus/ascii-screenshot#set-up-the-ap-shortcut).
+
 ## Playback and capture activity
 
 The local `aip` shell function plays iPhone history with `--fit`, preserving
@@ -10,9 +49,11 @@ each frame's proportions as the phone changes between portrait and landscape.
 
 ```sh
 aip 5m
+aip 14:00 14:30
 aip --uptime
 aip --uptime 24h
 aip --uptime --once
+aip --uptime --json
 ```
 
 `--uptime` opens a live chart of the **last hour**, refreshing every five seconds.
