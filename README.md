@@ -85,10 +85,13 @@ python3 uptime.py 24h --json
 
 - `ascii-screen`: `../ascii-screenshot-iphone-build/macos`. The iPhone build
   includes `--iphone <name-or-UUID>` and `--fit`; saved history retains each frame's dimensions.
-  It captures through Apple's `xcrun devicectl` using macOS's paired CoreDevice
-  connection. No Go binary, custom network tunnel, or lightpinky installation is needed.
-  Xcode must be installed and the phone paired with Developer Mode enabled.
-  Recording pauses while locked or with the display off; it never wakes or unlocks.
+  SwiftPM fetches a pinned `LightpinkyCore` library and builds it into the recorder.
+  Native state checks and reconnect handling share the phone controller's implementation;
+  discovery and screenshots use Apple's `devicectl` over the existing CoreDevice connection.
+  No Go binary, custom network tunnel, or separate lightpinky server is needed.
+  Full Xcode must be selected and the phone paired with Developer Mode enabled.
+  Recording pauses while locked or with the display off and sends no wake or unlock input.
+  Errors identify the failing phase: device connection, state read, or screenshot.
 - `bin/` contains local build copies and is ignored by Git.
 
 After rebuilding, replace the binary with a new file (do not overwrite running
