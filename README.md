@@ -83,19 +83,26 @@ python3 uptime.py 24h --json
 
 ## Recorder sources
 
-- `ascii-screen`: `../ascii-screenshot-iphone-build/macos`. The iPhone build
-  includes `--iphone <name-or-UUID>` and `--fit`; saved history retains each frame's dimensions.
-  SwiftPM fetches a pinned `LightpinkyCore` library and builds it into the recorder.
-  Native state checks and reconnect handling share the phone controller's implementation;
-  discovery uses Apple's `devicectl`, while state reads and screenshots use CoreDevice
-  requests without spawning commands during capture.
-  No Go binary, custom network tunnel, or separate lightpinky server is needed.
+- `phoneframes` (this repository, `Sources/phoneframes`): captures the paired iPhone and
+  prints frames for `ascii-screen --frames`. It builds against a pinned
+  [LightpinkyCore](https://github.com/tetratorus/lightpinky), which reads lock and display
+  state and takes screenshots through macOS's CoreDevice connection. `./install.sh` builds it.
   Full Xcode must be selected and the phone paired with Developer Mode enabled.
-  Recording pauses while locked or with the display off and sends no wake or unlock input.
-  Errors identify the failing phase: device connection, state read, or screenshot.
+  - Recording pauses while the phone is locked or its display is off, and sends no wake or
+    unlock input.
+  - While the lightpinky controller is streaming the display for input, `phoneframes` takes
+    that stream's frames instead of screenshots, so the two do not compete for the link.
+    Those frames are compressed and stretched by two rows, so detected lines can differ
+    until the controller goes idle.
+  - Errors on stderr name the failing phase: device connection, state read, or screenshot.
+  - Test with `swift test -c release`.
+- `ascii-screen`: a release build of [ascii-screenshot](https://github.com/tetratorus/ascii-screenshot)
+  (`swift build -c release --package-path macos`), copied to `bin/`. It knows nothing about
+  phones: it runs `phoneframes` as its `--frames` command and does the OCR, line detection
+  and history.
 - `bin/` contains local build copies and is ignored by Git.
 
-After rebuilding, replace the binary with a new file (do not overwrite running
+After rebuilding `ascii-screen`, replace the binary with a new file (do not overwrite running
 signed executables in place), then run `./install.sh` to reload the service.
 The installer defaults to this Mac's paired iPhone; set `IPHONE_DEVICE` to select
 another name or UUID from `xcrun devicectl list devices`.

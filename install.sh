@@ -1,23 +1,23 @@
 #!/bin/bash
 # Install the iPhone screen recorder as a per-user background service (LaunchAgent).
-# Uses ascii-screen's native --iphone source over macOS CoreDevice, so the
-# phone's screen lands in ./screen.txt and ./history/ exactly like the Mac's does
-# in ~/.ascii-screen. No Mac Screen Recording permission is needed.
+# phoneframes (this repository) captures the paired phone over macOS CoreDevice and
+# feeds frames to ascii-screen --frames, so the phone's screen lands in ./screen.txt
+# and ./history/ exactly like the Mac's does in ~/.ascii-screen. No Mac Screen
+# Recording permission is needed.
 #
-#   ./install.sh              install bin/ binaries' LaunchAgent and start it
+#   ./install.sh              build phoneframes, install the LaunchAgent and start it
 #   ./install.sh --uninstall  stop and remove the service (data is kept)
 #
-# bin/ holds ascii-screen (release build of ../ascii-screenshot-iphone-build/macos).
-# Rebuild there, then replace the binary in bin/.
-#
-# To update the binaries: replace the files in bin/ (rm first, then cp — overwriting
-# a signed Mach-O in place gets it killed by the kernel as tainted), then
-#   launchctl kickstart -k gui/$(id -u)/com.tetratorus.ascii-iphone-screen
+# bin/ascii-screen is a release build of github.com/tetratorus/ascii-screenshot
+# (swift build -c release --package-path macos). To update it, rm the old file
+# first, then cp: overwriting a signed Mach-O in place gets it killed by the
+# kernel as tainted. Then run this script again.
 set -euo pipefail
 LABEL=com.tetratorus.ascii-iphone-screen
 DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_DIR="$DIR/bin"
 ASCII="$BIN_DIR/ascii-screen"
+FRAMES="$BIN_DIR/phoneframes"
 DEVICE="${IPHONE_DEVICE:-E4AF0765-388E-5F38-BA32-50727F5FB2CA}"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/ascii-iphone-screen.log"
@@ -35,13 +35,18 @@ if [[ "${1:-}" == "--uninstall" ]]; then
   exit 0
 fi
 
-[[ -x "$ASCII" ]] || { echo "missing ascii-screen in $BIN_DIR"; exit 1; }
-# The native --iphone source replaces the former Go frame producer.
-rm -f "$BIN_DIR/phoneframes"
+[[ -x "$ASCII" ]] || { echo "missing ascii-screen in $BIN_DIR (see the top of this script)"; exit 1; }
+# Frames can contain whatever was on the phone's screen; keep build output private too.
+(umask 077; xcrun swift build -c release --package-path "$DIR")
+rm -f "$FRAMES"
+install -m 755 "$DIR/.build/release/phoneframes" "$FRAMES"
 mkdir -p "$DIR/history" "$(dirname "$PLIST")" "$(dirname "$LOG")"
 chmod 700 "$DIR/history"
 
 xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
+# ascii-screen runs the frame command through sh, so quote each word for it.
+quote() { printf "'%s'" "${1//\'/\'\\\'\'}"; }
+COMMAND="$(quote "$FRAMES") $(quote "$DEVICE") --interval 1"
 # Frames and history contain whatever was on the phone's screen: owner-only.
 chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
 
@@ -54,9 +59,8 @@ chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
   <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key><array>
     <string>$(xml "$ASCII")</string>
-    <string>--iphone</string>
-    <string>$(xml "$DEVICE")</string>
-    <string>--interval</string><string>1</string>
+    <string>--frames</string>
+    <string>$(xml "$COMMAND")</string>
     <string>--width</string><string>100</string>
     <string>--height</string><string>40</string>
     <string>--fit</string>
