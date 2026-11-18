@@ -87,7 +87,8 @@ python3 uptime.py 24h --json
   includes `--iphone <name-or-UUID>` and `--fit`; saved history retains each frame's dimensions.
   SwiftPM fetches a pinned `LightpinkyCore` library and builds it into the recorder.
   Native state checks and reconnect handling share the phone controller's implementation;
-  discovery and screenshots use Apple's `devicectl` over the existing CoreDevice connection.
+  discovery uses Apple's `devicectl`, while state reads and screenshots use CoreDevice
+  requests without spawning commands during capture.
   No Go binary, custom network tunnel, or separate lightpinky server is needed.
   Full Xcode must be selected and the phone paired with Developer Mode enabled.
   Recording pauses while locked or with the display off and sends no wake or unlock input.
