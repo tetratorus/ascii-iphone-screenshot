@@ -1,15 +1,14 @@
 #!/bin/bash
 # Install the iPhone screen recorder as a per-user background service (LaunchAgent).
-# Feeds lightpinky's phoneframes stream into ascii-screen's --frames mode, so the
+# Uses ascii-screen's native --iphone source over macOS CoreDevice, so the
 # phone's screen lands in ./screen.txt and ./history/ exactly like the Mac's does
-# in ~/.ascii-screen. No Screen Recording permission needed: frames arrive on a pipe.
+# in ~/.ascii-screen. No Mac Screen Recording permission is needed.
 #
 #   ./install.sh              install bin/ binaries' LaunchAgent and start it
 #   ./install.sh --uninstall  stop and remove the service (data is kept)
 #
-# bin/ holds copies of ascii-screen (release build of ../ascii-screenshot-iphone-build/macos)
-# and phoneframes (build of ../lightpinky/cmd/phoneframes). Rebuild there, then
-# replace the files in bin/.
+# bin/ holds ascii-screen (release build of ../ascii-screenshot-iphone-build/macos).
+# Rebuild there, then replace the binary in bin/.
 #
 # To update the binaries: replace the files in bin/ (rm first, then cp — overwriting
 # a signed Mach-O in place gets it killed by the kernel as tainted), then
@@ -19,7 +18,7 @@ LABEL=com.tetratorus.ascii-iphone-screen
 DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN_DIR="$DIR/bin"
 ASCII="$BIN_DIR/ascii-screen"
-FRAMES="$BIN_DIR/phoneframes"
+DEVICE="${IPHONE_DEVICE:-E4AF0765-388E-5F38-BA32-50727F5FB2CA}"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 LOG="$HOME/Library/Logs/ascii-iphone-screen.log"
 DOMAIN="gui/$(id -u)"
@@ -36,7 +35,9 @@ if [[ "${1:-}" == "--uninstall" ]]; then
   exit 0
 fi
 
-[[ -x "$ASCII" && -x "$FRAMES" ]] || { echo "missing binaries in $BIN_DIR"; exit 1; }
+[[ -x "$ASCII" ]] || { echo "missing ascii-screen in $BIN_DIR"; exit 1; }
+# The native --iphone source replaces the former Go frame producer.
+rm -f "$BIN_DIR/phoneframes"
 mkdir -p "$DIR/history" "$(dirname "$PLIST")" "$(dirname "$LOG")"
 chmod 700 "$DIR/history"
 
@@ -44,8 +45,7 @@ xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # Frames and history contain whatever was on the phone's screen: owner-only.
 chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
 
-# Stay on Wi-Fi even while charging by USB, so unplugging does not break capture.
-CMD="$FRAMES -interval 1s -wifi-only"
+# CoreDevice owns transport selection and reconnects across USB/Wi-Fi changes.
 {
   cat <<PL
 <?xml version="1.0" encoding="UTF-8"?>
@@ -54,9 +54,9 @@ CMD="$FRAMES -interval 1s -wifi-only"
   <key>Label</key><string>$LABEL</string>
   <key>ProgramArguments</key><array>
     <string>$(xml "$ASCII")</string>
-    <string>--frames</string>
-    <string>$(xml "$CMD")</string>
-    <string>--interval</string><string>1s</string>
+    <string>--iphone</string>
+    <string>$(xml "$DEVICE")</string>
+    <string>--interval</string><string>1</string>
     <string>--width</string><string>100</string>
     <string>--height</string><string>40</string>
     <string>--fit</string>

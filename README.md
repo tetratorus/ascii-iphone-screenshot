@@ -83,11 +83,15 @@ python3 uptime.py 24h --json
 
 ## Recorder sources
 
-- `phoneframes`: `../lightpinky/cmd/phoneframes`. It rotates decoded frames
-  upright before sending their pixels and dimensions to OCR.
 - `ascii-screen`: `../ascii-screenshot-iphone-build/macos`. The iPhone build
-  includes `--frames` and `--fit`; saved history retains each frame's dimensions.
+  includes `--iphone <name-or-UUID>` and `--fit`; saved history retains each frame's dimensions.
+  It captures through Apple's `xcrun devicectl` using macOS's paired CoreDevice
+  connection. No Go binary, custom network tunnel, or lightpinky installation is needed.
+  Xcode must be installed and the phone paired with Developer Mode enabled.
+  Recording pauses while locked or with the display off; it never wakes or unlocks.
 - `bin/` contains local build copies and is ignored by Git.
 
-After rebuilding, replace the binaries with new files (do not overwrite running
+After rebuilding, replace the binary with a new file (do not overwrite running
 signed executables in place), then run `./install.sh` to reload the service.
+The installer defaults to this Mac's paired iPhone; set `IPHONE_DEVICE` to select
+another name or UUID from `xcrun devicectl list devices`.
