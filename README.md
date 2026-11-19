@@ -90,6 +90,8 @@ python3 uptime.py 24h --json
   Full Xcode must be selected and the phone paired with Developer Mode enabled.
   - Recording pauses while the phone is locked or its display is off, and sends no wake or
     unlock input.
+    It checks a paused phone every 3 seconds for the first minute and every 10 seconds
+    after that, so capture can take up to 10 seconds to resume.
   - While the lightpinky controller is streaming the display for input, `phoneframes` takes
     that stream's frames instead of screenshots, so the two do not compete for the link.
     Those frames are compressed and stretched by two rows, so detected lines can differ

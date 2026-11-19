@@ -21,6 +21,13 @@ final class CaptureTests: XCTestCase {
     XCTAssertEqual(Capture.pollDelay(interval: 1, elapsed: 25, failures: 0), 15)
   }
 
+  func testChecksALockedPhoneLessOftenAfterTheFirstMinute() {
+    XCTAssertEqual(Capture.pausedDelay(interval: 1, polls: 1), 3)
+    XCTAssertEqual(Capture.pausedDelay(interval: 1, polls: 20), 3)
+    XCTAssertEqual(Capture.pausedDelay(interval: 1, polls: 21), 10)
+    XCTAssertEqual(Capture.pausedDelay(interval: 30, polls: 21), 30)
+  }
+
   func testFrameIsHeaderThenBGRA() throws {
     let context = CGContext(data: nil, width: 2, height: 1, bitsPerComponent: 8, bytesPerRow: 8,
       space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!

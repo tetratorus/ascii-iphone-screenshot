@@ -12,6 +12,7 @@ final class Capture {
   private var controller: FrameReceiver?
   private var sharedAt: Double = 0
   private var lastState = ""
+  private var pausedPolls = 0
 
   init(device: String, interval: Double) {
     self.device = device
@@ -21,6 +22,12 @@ final class Capture {
   /// Unknown state is treated as idle.
   static func canCapture(power: [String: Any]) -> Bool {
     power["Locked"] as? Bool == false && power["ScreenOn"] as? Bool == true
+  }
+
+  /// Each check makes a sleeping phone answer over Wi-Fi. Stay quick for the
+  /// first minute, when the phone was probably just put down, then ease off.
+  static func pausedDelay(interval: Double, polls: Int) -> Double {
+    max(polls <= 20 ? 3 : 10, interval)
   }
 
   static func pollDelay(interval: Double, elapsed: Double, failures: Int) -> Double {
@@ -82,9 +89,11 @@ final class Capture {
           guard Self.canCapture(power: try phone.power()) else {
             failures = 0
             state("paused (locked, display off, or state unavailable)")
-            delay = max(3, interval)
+            pausedPolls += 1
+            delay = Self.pausedDelay(interval: interval, polls: pausedPolls)
             return
           }
+          pausedPolls = 0
           // While the phone controller is streaming the display, use its
           // frames: a screenshot would compete with it for the link.
           if controller == nil { controller = try? FrameReceiver(udid: phone.info.udid) }
