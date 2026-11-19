@@ -88,6 +88,8 @@ python3 uptime.py 24h --json
   [LightpinkyCore](https://github.com/tetratorus/lightpinky), which reads lock and display
   state and takes screenshots through macOS's CoreDevice connection. `./install.sh` builds it.
   Full Xcode must be selected and the phone paired with Developer Mode enabled.
+  The phone must also be reachable from the recording Mac over USB or local Wi-Fi.
+  A paired phone in another location is unavailable; the service waits and retries.
   - Recording pauses while the phone is locked or its display is off, and sends no wake or
     unlock input.
     It checks a paused phone every 3 seconds for the first minute and every 10 seconds
@@ -95,7 +97,16 @@ python3 uptime.py 24h --json
   - While the lightpinky controller is streaming the display for input, `phoneframes` takes
     that stream's frames instead of screenshots, so the two do not compete for the link.
     Those frames are compressed and stretched by two rows, so detected lines can differ
-    until the controller goes idle.
+    until the controller goes idle. The recorder never opens a video stream itself,
+    because streaming wakes and holds the phone's display active. The controller closes
+    its stream after about 30 seconds without input or video requests; read-only state
+    and accessibility queries do not extend that time. The recorder waits through short
+    frame gaps before returning to full-resolution lossless PNG screenshots.
+  - Passive PNG capture can be slow on weak Wi-Fi. The screenshot service has no
+    size or quality option; capture time depends on the screen content and link speed.
+    After a slow capture, the recorder leaves the link idle for up to 15 seconds.
+    Video uses less bandwidth but changes pixels and can trigger additional OCR even
+    on a still screen. Comparative phone battery use has not been measured.
   - Errors on stderr name the failing phase: device connection, state read, or screenshot.
   - Test with `swift test -c release`.
 - `ascii-screen`: a release build of [ascii-screenshot](https://github.com/tetratorus/ascii-screenshot)
@@ -108,3 +119,6 @@ After rebuilding `ascii-screen`, replace the binary with a new file (do not over
 signed executables in place), then run `./install.sh` to reload the service.
 The installer defaults to this Mac's paired iPhone; set `IPHONE_DEVICE` to select
 another name or UUID from `xcrun devicectl list devices`.
+
+Screen output, history and logs can contain private phone content. Keep them outside Git.
+The installer sets the recorder log to owner-only permissions (`0600`).
