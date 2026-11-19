@@ -42,6 +42,7 @@ rm -f "$FRAMES"
 install -m 755 "$DIR/.build/release/phoneframes" "$FRAMES"
 mkdir -p "$DIR/history" "$(dirname "$PLIST")" "$(dirname "$LOG")"
 chmod 700 "$DIR/history"
+(umask 077; : >> "$LOG") && chmod 600 "$LOG"
 
 xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # ascii-screen runs the frame command through sh, so quote each word for it.
