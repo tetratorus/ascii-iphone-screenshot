@@ -109,6 +109,9 @@ python3 uptime.py 24h --json
     on a still screen. Comparative phone battery use has not been measured.
   - Errors on stderr name the failing phase: device connection, state read, or screenshot.
     Power reads retry once on a fresh connection after a transport timeout or disconnect.
+    A lock-state read still pending after one second is canceled and replaced once,
+    with a three-second replacement deadline. Late replies are discarded, and at most
+    two unfinished state reads are allowed per phone in the recorder process.
     If that fails, recording pauses and the normal failure backoff applies; no input is sent.
   - Test with `swift test -c release`.
 - `ascii-screen`: a release build of [ascii-screenshot](https://github.com/tetratorus/ascii-screenshot)
