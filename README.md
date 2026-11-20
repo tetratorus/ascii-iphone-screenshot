@@ -108,6 +108,8 @@ python3 uptime.py 24h --json
     Video uses less bandwidth but changes pixels and can trigger additional OCR even
     on a still screen. Comparative phone battery use has not been measured.
   - Errors on stderr name the failing phase: device connection, state read, or screenshot.
+    Power reads retry once on a fresh connection after a transport timeout or disconnect.
+    If that fails, recording pauses and the normal failure backoff applies; no input is sent.
   - Test with `swift test -c release`.
 - `ascii-screen`: a release build of [ascii-screenshot](https://github.com/tetratorus/ascii-screenshot)
   (`swift build -c release --package-path macos`), copied to `bin/`. It knows nothing about
