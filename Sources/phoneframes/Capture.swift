@@ -8,15 +8,17 @@ import LightpinkyCore
 final class Capture {
   private let device: String
   private let interval: Double
+  private let scale: Double
   private var phone: Phone?
   private var controller: FrameReceiver?
   private var sharedAt: Double = 0
   private var lastState = ""
   private var pausedPolls = 0
 
-  init(device: String, interval: Double) {
+  init(device: String, interval: Double, scale: Double = 1) {
     self.device = device
     self.interval = interval
+    self.scale = scale
   }
 
   /// Unknown state is treated as idle.
@@ -43,8 +45,10 @@ final class Capture {
   }
 
   /// "W H\n" followed by tightly packed BGRA rows.
-  static func encode(_ image: CGImage) -> Data? {
-    let width = image.width, height = image.height
+  static func encode(_ image: CGImage, scale: Double = 1) -> Data? {
+    let factor = min(1, max(0.01, scale))
+    let width = max(1, Int((Double(image.width) * factor).rounded()))
+    let height = max(1, Int((Double(image.height) * factor).rounded()))
     var pixels = Data(count: width * height * 4)
     let drawn = pixels.withUnsafeMutableBytes { bytes -> Bool in
       let space = image.colorSpace.flatMap { $0.model == .rgb ? $0 : nil } ?? CGColorSpace(name: CGColorSpace.sRGB)!
@@ -52,7 +56,7 @@ final class Capture {
               bytesPerRow: width * 4, space: space,
               bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
       else { return false }
-      context.interpolationQuality = .none
+      context.interpolationQuality = width == image.width && height == image.height ? .none : .medium
       context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
       return true
     }
@@ -105,7 +109,7 @@ final class Capture {
           // re-read twice.
           if shared == nil, now - sharedAt < 8 { return }
           phase = "screenshot"
-          guard let frame = Self.encode(try shared ?? phone.screenshot()) else {
+          guard let frame = Self.encode(try shared ?? phone.screenshot(), scale: scale) else {
             throw PhoneError("cannot convert the frame")
           }
           // ascii-screen closing the pipe is the signal to stop.

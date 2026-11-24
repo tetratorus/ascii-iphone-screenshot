@@ -47,7 +47,7 @@ chmod 700 "$DIR/history"
 xml() { local s=${1//&/&amp;}; s=${s//</&lt;}; printf '%s' "${s//>/&gt;}"; }
 # ascii-screen runs the frame command through sh, so quote each word for it.
 quote() { printf "'%s'" "${1//\'/\'\\\'\'}"; }
-COMMAND="$(quote "$FRAMES") $(quote "$DEVICE") --interval 1"
+COMMAND="$(quote "$FRAMES") $(quote "$DEVICE") --interval 1 --scale 0.5"
 # Frames and history contain whatever was on the phone's screen: owner-only.
 chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
 

@@ -1,8 +1,9 @@
 import Foundation
 
-let usage = "usage: phoneframes <device name or UUID> [--interval seconds]\n"
+let usage = "usage: phoneframes <device name or UUID> [--interval seconds] [--scale 0..1]\n"
 var arguments = Array(CommandLine.arguments.dropFirst())
 var interval = 1.0
+var scale = 0.5
 if let flag = arguments.firstIndex(of: "--interval") {
   guard flag + 1 < arguments.count, let value = Double(arguments[flag + 1]), value > 0 else {
     FileHandle.standardError.write(Data(usage.utf8)); exit(2)
@@ -10,11 +11,18 @@ if let flag = arguments.firstIndex(of: "--interval") {
   interval = value
   arguments.removeSubrange(flag...(flag + 1))
 }
+if let flag = arguments.firstIndex(of: "--scale") {
+  guard flag + 1 < arguments.count, let value = Double(arguments[flag + 1]), value > 0, value <= 1 else {
+    FileHandle.standardError.write(Data(usage.utf8)); exit(2)
+  }
+  scale = value
+  arguments.removeSubrange(flag...(flag + 1))
+}
 guard arguments.count == 1, !arguments[0].hasPrefix("-") else {
   FileHandle.standardError.write(Data(usage.utf8)); exit(2)
 }
 signal(SIGPIPE, SIG_IGN)
-let capture = Capture(device: arguments[0], interval: interval)
+let capture = Capture(device: arguments[0], interval: interval, scale: scale)
 DispatchQueue.global(qos: .utility).async { capture.run() }
 // CoreDevice delivers discovery and connection callbacks on the main loop.
 RunLoop.main.run()
