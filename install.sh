@@ -65,6 +65,7 @@ chmod -R go-rwx "$DIR/history" "$DIR/screen.txt" 2>/dev/null || true
     <string>--width</string><string>100</string>
     <string>--height</string><string>40</string>
     <string>--fit</string>
+    <string>--auto-language</string>
     <string>--out</string><string>$(xml "$DIR/screen.txt")</string>
     <string>--history</string><string>$(xml "$DIR/history")</string>
     <string>--stats</string>
