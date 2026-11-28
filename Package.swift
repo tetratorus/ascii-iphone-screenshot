@@ -6,7 +6,7 @@ let package = Package(
   platforms: [.macOS(.v14)],
   dependencies: [
     .package(url: "https://github.com/tetratorus/lightpinky.git",
-             revision: "8dceaccee80c1370f26b36aaec3e97b394d0b9eb"),
+             revision: "bb57b0574e3a1a2a8218141e46d1bc1628341285"),
   ],
   targets: [
     .executableTarget(
